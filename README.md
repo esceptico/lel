@@ -12,6 +12,10 @@ from transformers import AutoTokenizer
 from lel.data import LabelSet, NERDataset, Sampler
 from lel.train import Trainer
 
+
+data = [{'text': 'last item of iterable', 'labels': [(5, 13, 'NAME')]}]
+
+
 tokenizer = AutoTokenizer.from_pretrained('...')
 label_set = LabelSet(labels=['NAME', 'ORG'], markup_type='BIO', align_type='word')
 vocab_size = tokenizer.vocab_size
@@ -19,7 +23,7 @@ num_labels = len(label_set.label_to_id)
 model = Model(vocab_size, num_labels)
 
 dataset = NERDataset(
-    data=data_iterator(),
+    data=data,
     tokenizer=tokenizer,
     label_set=label_set,
     sampler=Sampler(512, overlap=256),
