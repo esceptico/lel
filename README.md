@@ -1,5 +1,5 @@
 # LEL
-Light Entity Library ¯\_(ツ)_/¯
+Light Entity Library ¯\\\_(ツ)_/¯
 
 ## Usage
 
