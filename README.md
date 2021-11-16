@@ -1,5 +1,6 @@
 # LEL
-Light Entity Library ¯\\\_(ツ)_/¯
+Light Entity Library ¯\\\_(ツ)_/¯  
+Lightweight transformers-based NER pipeline.
 
 ## Usage
 
