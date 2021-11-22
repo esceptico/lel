@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterable, Optional, Sequence
 import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import PreTrainedTokenizerFast
+from tqdm import tqdm
 
 from lel.data.label import LabelSet
 from lel.data.sampling.sample import Sample
@@ -34,7 +35,7 @@ class NERDataset(Dataset):
         self.skip_broken_samples = skip_broken_samples
         self.samples = []
 
-        for item in data:
+        for item in tqdm(data):
             text, labels = item['text'], item['labels']
             # TODO: Add special tokens after padding?
             encoding = tokenizer(text, add_special_tokens=False).encodings[0]

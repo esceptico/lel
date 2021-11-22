@@ -43,18 +43,21 @@ class Trainer:
             num_warmup_steps=num_warmup_steps,
             num_training_steps=max_train_steps,
         )
-        for epoch in range(n_epochs):
-            self.train(train_loader, epoch, optimizer, accumulation_steps, lr_scheduler)
-            if val_loader is not None:
-                self.eval(val_loader, epoch)
+        try:
+            for epoch in range(n_epochs):
+                self.train(train_loader, optimizer, accumulation_steps, lr_scheduler, epoch)
+                if val_loader is not None:
+                    self.eval(val_loader)
+        except KeyboardInterrupt:
+            print('Keyboard interrupt...')
 
     def train(
         self,
         loader: DataLoader,
-        epoch: int,
         optimizer: Optimizer,
         accumulation_steps: int,
-        lr_scheduler
+        lr_scheduler,
+        epoch: int
     ):
         self.model.train()
         loss = MeanMetric()
@@ -65,7 +68,7 @@ class Trainer:
             outputs = self.model(**batch)
             outputs.loss = outputs.loss / accumulation_steps
             outputs.loss.backward()
-            loss.update(outputs.loss)
+            loss.update(outputs.loss.cpu())
             bar.set_postfix({'loss': outputs.loss.detach().item()})
             if (num + 1) % accumulation_steps == 0 or num == last_batch_index:
                 optimizer.step()
@@ -75,7 +78,7 @@ class Trainer:
         bar.set_postfix({'loss': epoch_loss})
 
     @torch.inference_mode()
-    def eval(self, loader, epoch: int):
+    def eval(self, loader):
         self.model.eval()
         labels = loader.dataset.label_set.label_to_id
         classification_report = ClassificationReport(
@@ -84,12 +87,12 @@ class Trainer:
             ignore=[loader.dataset.label_set.outside_id]
         ).to(self.device)
         loss = MeanMetric()
-        bar = tqdm(loader, desc=f'Epoch[{epoch}] Eval')
+        bar = tqdm(loader, desc='Eval')
         for num, batch in enumerate(bar):
             batch = move_to_device(batch, self.device)
             outputs = self.model(**batch)
             preds = outputs.logits.softmax(-1)
-            loss.update(outputs.loss)
+            loss.update(outputs.loss.cpu())
             classification_report.update(preds.argmax(-1), batch['labels'])
             bar.set_postfix({'loss': outputs.loss.detach().item()})
         epoch_loss = loss.compute().item()
