@@ -43,12 +43,10 @@ class LabelSet:
 
     def align(self, tokenized, labels) -> List[int]:
         aligned_labels = self.aligner(tokenized, labels, markup=self.markup)
-        print(f'{aligned_labels=}')
         return [self.label_to_id.get(label, self.pass_id) for label in aligned_labels]
 
     def spans_from_ids(self, ids, offsets, ignore=None) -> List[Span]:
         labels = [self.id_to_label.get(idx, None) for idx in ids]
-        print(f'{labels=}')
         return list(self.markup.decode(labels, offsets, ignore))
 
     def save(self, save_dir: str):

@@ -1,20 +1,27 @@
 import math
-from typing import Optional
+from typing import Optional, Union
 
 import torch
 from torch import nn
 from torch.optim import Optimizer
 from torch.utils.data import DataLoader
-from torchmetrics import AverageMeter
+from torchmetrics import MeanMetric
 from transformers import get_scheduler
 from tqdm import tqdm
 
+from lel.data.utils import move_to_device
 from lel.metrics import ClassificationReport
 
 
 class Trainer:
-    def __init__(self, model: nn.Module):
+    def __init__(
+        self,
+        model: nn.Module,
+        device: Union[str, torch.device] = 'cpu'
+    ):
         self.model = model
+        self.device = device
+        self.model.to(self.device)
 
     def run(
         self,
@@ -41,9 +48,6 @@ class Trainer:
             if val_loader is not None:
                 self.eval(val_loader, epoch)
 
-    def setup_scheduler(self):
-        pass
-
     def train(
         self,
         loader: DataLoader,
@@ -53,10 +57,11 @@ class Trainer:
         lr_scheduler
     ):
         self.model.train()
-        loss = AverageMeter()
+        loss = MeanMetric()
         last_batch_index = len(loader) - 1
         bar = tqdm(loader, desc=f'Epoch[{epoch}] Train')
         for num, batch in enumerate(bar):
+            batch = move_to_device(batch, self.device)
             outputs = self.model(**batch)
             outputs.loss = outputs.loss / accumulation_steps
             outputs.loss.backward()
@@ -77,10 +82,11 @@ class Trainer:
             num_classes=len(labels),
             label_ids=labels,
             ignore=[loader.dataset.label_set.outside_id]
-        )
-        loss = AverageMeter()
+        ).to(self.device)
+        loss = MeanMetric()
         bar = tqdm(loader, desc=f'Epoch[{epoch}] Eval')
         for num, batch in enumerate(bar):
+            batch = move_to_device(batch, self.device)
             outputs = self.model(**batch)
             preds = outputs.logits.softmax(-1)
             loss.update(outputs.loss)
