@@ -2,3 +2,5 @@ dataclasses
 tokenizers>=0.10.3
 torch>=1.9.1
 torchmetrics>=0.6.0
+transformers
+tqdm
